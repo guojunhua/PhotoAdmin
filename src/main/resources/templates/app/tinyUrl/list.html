@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(link)"/>
+<style>
+    .home-container {
+        width: 600px;
+        margin: 0 auto;
+        margin-top:100px;
+        position: relative;
+    }
+</style>
+<body>
+    <div id="wrapper" v-cloak>
+            <div class="home-container">
+                <template>
+                    <tabs>
+                        <tab-pane @click="tab(0)" icon="md-build" label="缩短网址"/>
+                            <i-form ref="checkForm"  :model="tinyUrl"  :rules="ruleValidate">
+                                <form-item prop="url">
+                                    <i-input search enter-button="缩短网址"  v-model="tinyUrl.url" @on-search="create()" placeholder="请输入长网址" />
+                                </form-item>
+                                <form-item label="选择失效时间：" prop="gmtExpire">
+                                    <radio-group  v-model="tinyUrl.expire" >
+                                        <radio v-for="item in expire" :label="item.code">{{item.name}}</radio>
+                                    </radio-group>
+                                </form-item>
+                            </i-form>
+                        </tab-pane>
+                        <tab-pane @click="tab(1)"  icon="ios-redo" label="还原网址">
+                            <i-input search enter-button="还原网址" @on-search="restore()" placeholder="请输入短网址" />
+                        </tab-pane>
+                    </tabs>
+                    <div v-show="keyShow">
+                        <i-input id="URL" v-model="tinyUrl.tinykey" style="width: 500px"></i-input>
+                        <i-button data-clipboard-target="#URL" class="btn" @click="copy()" type="primary">复制</i-button>
+                    </div>
+                </template>
+            </div>
+    </div>
+    <div th:replace="common/foot :: foot(clipboard)"></div>
+    <script>
+    new ClipboardJS('.btn');
+    layui.use(["okUtils", "okLayer"], function () {
+         var okUtils = layui.okUtils;
+         var okLayer = layui.okLayer;
+         var vm = new Vue({
+	    	el : '#wrapper',
+	    	data:{
+	    	    tinyUrl:{
+	    	        expire:0,
+	    	        tinykey:''
+	    	    },
+	    	    keyShow:false,
+                expire :[{"code":1,"name":"1天"},{"code":3,"name":"3天"},{"code":7,"name":"7天"},{"code":30,"name":"30天"},{"code":0,"name":"永久"}],
+                ruleValidate : {
+	            	url: [
+	                    { required: true, message: '地址不能为空', trigger: 'blur' }
+	                ]
+	            },
+	    	},
+            methods : {
+                create: function() {
+                    var that = this;
+                    vm.$refs.checkForm.validate(function(valid){
+		                if (valid) {
+		                     if(that.tinyUrl.expire!=0){
+                               that.tinyUrl.gmtExpire = okUtils.addData(that.tinyUrl.expire)
+                             }else{
+                               that.tinyUrl.gmtExpire = "2049-10-01 00:00:00";
+                             }
+                             okUtils.ajax("/app/tinyUrl/save", "post", that.tinyUrl, false).done(function (response) {
+                                okLayer.msg.greenTick("生成成功", function () {
+                                    that.tinyUrl.tinykey = response.msg;
+                                    that.keyShow = true;
+                                })
+                             }).fail(function (error) {
+                               console.log(error)
+                             });
+		                }
+		            });
+                },
+                restore:function(){
+                    okLayer.msg.yellowQuestion("还原是不可能的，这辈子都不可能！！！");
+                },
+                copy:function(){
+                    this.$Notice.success({
+                        title: '复制成功',
+                        desc:'小伙伴，赶紧尝试一下吧'
+                    });
+                },
+                tab:function(code){
+
+                }
+            },
+            created : function() {
+
+	    	}
+         });
+    });
+    </script>
+</body>
+</html>

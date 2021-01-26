@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(link)"/>
+<body>
+<div id="app" class="ok-body" v-cloak>
+    <template>
+        <div style="margin-bottom: 8px;margin-top: 8px;">
+            <i-input placeholder="输入内容"  v-model="leave.description"  style="width: 300px"></i-input>
+            <i-button type="primary"  icon="ios-search" @click="load()">搜索</i-button>
+        </div>
+    </template>
+    <template>
+        <i-table size="small" :columns="tableTitle"  :data="tableData">
+        </i-table>
+        <br>
+        <Page  style="float: right;" :current="leave.pageNo" :total="tableSize" :page-size="leave.pageSize"  @on-change="changePage" @on-page-size-change="changePageSize" show-elevator show-sizer show-total></Page>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+layui.use(["okUtils", "okLayer"], function () {
+    var okUtils = layui.okUtils;
+    var okLayer = layui.okLayer;
+    var vm = new Vue({
+        el: '#app',
+        data: function(){
+        var that = this;
+		return {
+            tableTitle : [{
+                title: '序号',
+                minWidth : 100,
+                render: function(h, params) {
+                    return h('span', params.index + (that.leave.pageNo- 1) * that.leave.pageSize + 1);
+                }
+            },{
+                key : "type",
+                title : "类型",
+                minWidth:100
+            },{
+                key : "beginDate",
+                title : "开始日期",
+                minWidth:100
+            },{
+                key : "endDate",
+                title : "结束日期",
+                minWidth:100
+            },{
+                key : "reason",
+                title : "原因",
+                minWidth:100
+            },{
+                key : "gmtCreate",
+                title : "创建时间",
+                minWidth:200
+            },{
+                key : "nickname",
+                title : "申请人",
+                minWidth:200
+            }],
+            tableData : [],
+            leave : {
+                pageSize : 10,
+                pageNo : 1,
+                description:''
+            },
+            tableSize : 50,
+          }
+        },
+        methods: {
+            load : function() {
+                var that = this;
+                okUtils.ajaxCloud({
+                    url:"/workflow/leave/doneList",
+                    param : that.leave,
+                    success : function(result) {
+                         that.tableData = result.msg.pageData;
+                         that.tableSize = result.msg.totalCount;
+                    }
+                });
+            },
+            reload : function(){
+                vm.leave.pageSize = 10;
+                vm.leave.pageNo = 1;
+                vm.leave.description = '';
+                this.load();
+            },
+            changePage : function(pageNo) {
+                vm.leave.pageNo = pageNo;
+                vm.load();
+            },
+            changePageSize : function(pageSize) {
+                vm.leave.pageSize = pageSize;
+                vm.load();
+            }
+        },
+        created: function() {
+            this.load()
+        }
+    })
+  });
+</script>
+</body>
+</html>

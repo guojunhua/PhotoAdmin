@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(link)"/>
+<body>
+<div id="app" class="ok-body" v-cloak>
+    <template>
+        <tabs>
+            <tab-pane label="人力资源"  icon="md-build" >
+                <i-button type="primary"   @click="add('workflow/hr/leave')" >请假</i-button>
+            </tab-pane>
+            <tab-pane label="财务"  icon="logo-usd" >
+                维护中......
+            </tab-pane>
+            <tab-pane label="生产"  icon="md-people" >
+                维护中......
+            </tab-pane>
+        </tabs>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+layui.use(["okUtils", "okLayer"], function () {
+    var okUtils = layui.okUtils;
+    var okLayer = layui.okLayer;
+    var vm = new Vue({
+        el: '#app',
+        data: function(){
+            var that = this;
+            return {
+
+            }
+        },
+        methods: {
+            add:function(type){
+                 okUtils.dialogOpen({
+                    title: '新增',
+                    url: type+"/add.html",
+                    scroll : true,
+                    width: '60%',
+                    height: '75%',
+                    yes : function(dialog) {
+                        dialog.vm.acceptClick(vm);
+                    }
+                });
+            }
+        },
+        created: function() {
+
+        }
+    })
+  });
+</script>
+</body>
+</html>

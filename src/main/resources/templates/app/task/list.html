@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(link)"/>
+<body>
+<div id="app" class="ok-body" v-cloak>
+    <!--模糊搜索区域-->
+    <template>
+        <div style="margin-bottom: 8px;margin-top: 8px;">
+            <i-input placeholder="输入内容"  v-model="task.description"  style="width: 300px"></i-input>
+            <i-button type="primary"  icon="ios-search" @click="load()">搜索</i-button>
+            <i-button type="primary"  icon="ios-redo" @click="reload()" >重置</i-button>
+            <i-button type="primary"  style="float:right;" icon="md-add" @click="add()">新增</i-button>
+        </div>
+    </template>
+    <template>
+        <i-table  size="small" :columns="tableTitle"  :data="tableData"></i-table>
+        <br>
+        <Page  style="float: right;" :current="task.pageNo" :total="tableSize" :page-size="task.pageSize"  @on-change="changePage" @on-page-size-change="changePageSize" show-elevator show-sizer show-total></Page>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+layui.use(["okUtils", "okLayer"], function () {
+    var okUtils = layui.okUtils;
+    var okLayer = layui.okLayer;
+    var vm = new Vue({
+        el: '#app',
+        data: function(){
+        var that = this;
+		return {
+            tableTitle : [{
+                title: '序号',
+                minWidth : 70,
+                render: function(h, params) {
+                    return h('span', params.index + (that.task.pageNo- 1) * that.task.pageSize + 1);
+                }
+            },{
+                key : "group",
+                title : "任务分组",
+                minWidth:100
+            },{
+                key : "name",
+                title : "任务名称",
+                minWidth:100
+            },{
+                key : "taskClassName",
+                title : "类",
+                minWidth:260
+            },{
+                key : "methodName",
+                title : "方法",
+                width:80
+            },{
+                key : "cronExpression",
+                title : "时间",
+                width:150
+            },{
+                key : "gmtCreate",
+                title : "创建时间",
+                minWidth:150
+            },{
+                title : '操作',
+                key : 'action',
+                minWidth : 350,
+                align : 'center',
+                render : function(h, params) {
+                    var functionList = [];
+                    var edit = h('Button', {
+                        props : {
+                            type : 'primary',
+                            size : 'small',
+                            icon : 'md-create'
+                        },
+                        style : {
+                            marginRight : '8px'
+                        },
+                        on : {
+                            click : function() {
+                                vm.edit(params.row);
+                            }
+                        }
+                    }, '修改');
+                    functionList.push(edit);
+                    var remove = h('Button', {
+                        props : {
+                            type : 'primary',
+                            size : 'small',
+                            icon : 'md-trash'
+                        },
+                        style : {
+                            marginRight : '8px'
+                        },
+                        on : {
+                            click : function() {
+                                vm.remove(params.row);
+                            }
+                        }
+                    }, '删除');
+                    functionList.push(remove);
+                    var trigger = h('Button', {
+                        props : {
+                            type : 'primary',
+                            size : 'small',
+                            icon : 'ios-play'
+                        },
+                        style : {
+                            marginRight : '8px'
+                        },
+                        on : {
+                            click : function() {
+                                vm.trigger(params.row);
+                            }
+                        }
+                    }, '执行');
+                    functionList.push(trigger);
+                    if (params.row.triggerState == "PAUSED") {
+                        var resume = h('Button', {
+                            props : {
+                                type : 'primary',
+                                size : 'small',
+                                icon : 'md-hammer'
+                            },
+                            style : {
+                                marginRight : '8px'
+                            },
+                            on : {
+                                click : function() {
+                                    vm.resume(params.row);
+                                }
+                            }
+                        }, '恢复');
+                        functionList.push(resume);
+                    } else {
+                         var stop = h('Button', {
+                            props : {
+                                type : 'primary',
+                                size : 'small',
+                                icon : 'ios-pause'
+                            },
+                            style : {
+                                marginRight : '8px'
+                            },
+                            on : {
+                                click : function() {
+                                    vm.resume(params.row);
+                                }
+                            }
+                        }, '停止');
+                        functionList.push(stop);
+                    }
+                    return h('div', functionList);
+                }
+            } ],
+            tableData : [],
+            task : {
+                pageSize : 10,
+                pageNo : 1,
+                description:''
+            },
+            tableSize : 50
+          }
+        },
+        methods: {
+            load : function() {
+                var that = this;
+                okUtils.ajaxCloud({
+                    url:"/app/task/list",
+                    param : that.task,
+                    success : function(result) {
+                         that.tableData = result.msg.pageData;
+                         that.tableSize = result.msg.totalCount;
+                    }
+                });
+            },
+            reload :  function(){
+                vm.task.description = "";
+                this.load();
+            },
+            changePage : function(pageNo) {
+                vm.task.pageNo = pageNo;
+                vm.load();
+            },
+            changePageSize : function(pageSize) {
+                vm.task.pageSize = pageSize;
+                vm.load();
+            },
+            add:function(){
+                okUtils.dialogOpen({
+                    title: '新增',
+                    url: "app/task/form.html",
+                    scroll : true,
+                    width: '40%',
+                    height: '70%',
+                    success : function(dialog) {
+
+                    },
+                    yes : function(dialog) {
+                        dialog.vm.acceptClick(vm);
+                    }
+                });
+            },
+            edit : function(task) {
+                okUtils.dialogOpen({
+                    title: '修改',
+                    url: "app/task/form.html",
+                    scroll : true,
+                    width: '40%',
+                    height: '70%',
+                    success : function(dialog) {
+                        task.oldName = task.name;
+                        task.oldGroup = task.group;
+                        dialog.vm.task = JSON.parse(JSON.stringify(task));
+                    },
+                    yes : function(dialog) {
+                        dialog.vm.acceptClick(vm);
+                    }
+                });
+            },
+            remove : function (task) {
+                 okLayer.confirm("确定要删除吗？", function () {
+                    okUtils.ajaxCloud({
+                        url:"/app/task/delete",
+                        param : task,
+                        success : function(result) {
+                            okLayer.msg.greenTick(result.msg, function () {
+                                  vm.load();
+                            });
+                        }
+                    });
+                 })
+            },
+            trigger : function (task) {
+                okUtils.ajaxCloud({
+                    url:"/app/task/trigger",
+                    param : task,
+                    success : function(result) {
+                       okLayer.msg.greenTick(result.msg)
+                    }
+                });
+            },
+            resume : function (task) {
+                okUtils.ajaxCloud({
+                    url:"/app/task/resume",
+                    param : task,
+                    success : function(result) {
+                        okLayer.msg.greenTick(result.msg, function () {
+                              vm.load();
+                        });
+                    }
+                });
+            }
+        },
+        created: function() {
+            this.load()
+        }
+    });
+});
+</script>
+</body>
+</html>

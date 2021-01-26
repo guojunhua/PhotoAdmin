@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(tree)"/>
+<style>
+    .div-a{ float:left;width:15%;margin: 8px 3px 0px 3px;height:100%;}
+    .div-b{ float:left;width:82%;margin: 8px 0px 8px 0px;height:100%;}
+</style>
+<body>
+    <div id="app" v-cloak>
+        <div class="div-a">
+            <Card>
+                <p slot="title">
+                    机构
+                </p>
+                <div id="treePanel" style="overflow: auto;">
+                    <ul id="orgTree" class="ztree"></ul>
+                </div>
+            </Card>
+        </div>
+        <div class="div-b">
+            <Card>
+                <!--模糊搜索区域-->
+                <template>
+                    <div style="margin-bottom: 8px;margin-top: 8px;">
+                        <i-input placeholder="输入内容"  v-model="org.description"  style="width: 300px"></i-input>
+                        <i-button type="primary"  icon="ios-search" @click="load(0)">搜索</i-button>
+                        <i-button type="primary"  icon="ios-redo" @click="reload()" >重置</i-button>
+                        <i-button type="primary" style="float:right;" icon="md-add" @click="add()">新增</i-button>
+                    </div>
+                </template>
+                <template>
+                    <i-table size="small" :columns="tableTitle"  :data="tableData">
+                    </i-table>
+                    </br>
+                    <Page  style="float: right;" :current="org.pageNumber" :total="tableSize" :page-size="org.pageSize"  @on-change="changePage" @on-page-size-change="changePageSize" show-elevator show-sizer show-total></Page>
+                    </br>
+                </template>
+            </Card>
+        </div>
+    </div>
+<div th:replace="common/foot :: foot(jquery、tree)"></div>
+<script th:inline="none">
+var ztree;
+var setting = {
+    data : {
+        simpleData : {
+            enable : true,
+            idKey : "orgId",
+            pIdKey : "parentId",
+            rootPId : "0"
+        },
+        key : {
+            url : "nourl"
+        }
+    },
+    callback : {
+        onClick : function(event, treeId, treeNode) {
+            vm.org.parentId = treeNode.orgId;
+            vm.org.parentName = treeNode.name;
+            vm.load();
+        }
+    }
+};
+var vm = new Vue({
+    el: '#app',
+    data: {
+        okUtils:null,
+        okLayer:null,
+        tableTitle : [ {
+            title: '序号',
+            minWidth : 100,
+            render: function(h, params) {
+                return h('span', params.index + (vm.org.pageNo- 1) * vm.org.pageSize + 1);
+            }
+        },{
+            key : "code",
+            title : "机构代码",
+            minWidth:100
+        },{
+            key : "name",
+            title : "机构名称",
+            minWidth:100
+        },{
+            key : "fullName",
+            title : "机构全称",
+            minWidth:100
+        },{
+            key : "gmtCreate",
+            title : "创建时间",
+            minWidth:150
+        },{
+            title : '操作',
+            key : 'action',
+            minWidth : 300,
+            align : 'center',
+            render : function(h, params) {
+                var functionList = [];
+                var edit = h('Button', {
+                    props : {
+                        type : 'primary',
+                        size : 'small',
+                        icon : 'md-create'
+                    },
+                    style : {
+                        marginRight : '8px'
+                    },
+                    on : {
+                        click : function() {
+                            vm.edit(params.row);
+                        }
+                    }
+                }, '修改');
+                functionList.push(edit);
+                var remove = h('Button', {
+                    props : {
+                        type : 'primary',
+                        size : 'small',
+                        icon : 'md-trash'
+                    },
+                    style : {
+                        marginRight : '8px'
+                    },
+                    on : {
+                        click : function() {
+                            vm.remove(params.row);
+                        }
+                    }
+                }, '删除');
+                functionList.push(remove);
+                var add = h('Button', {
+                    props : {
+                        type : 'primary',
+                        size : 'small',
+                        icon : 'md-add'
+                    },
+                    style : {
+                        marginRight : '8px'
+                    },
+                    on : {
+                        click : function() {
+                            vm.add(params.row);
+                        }
+                    }
+                }, '新增');
+                functionList.push(add);
+                return h('div', functionList);
+            }
+        } ],
+        tableData : [],
+        org : {
+            pageSize : 10,
+            pageNo : 1,
+            description:'',
+            parentId:0,
+            parentName:''
+        },
+        tableSize : 0,
+    },
+    methods: {
+        tree : function() {
+            vm.okUtils.ajax("/sys/org/select", "post", {parentId: null}, false).done(function (response) {
+                ztree = $.fn.zTree.init($("#orgTree"), setting, response.msg);
+            }).fail(function (error) {
+                console.log(error)
+            });
+        },
+        load : function() {
+            var that = this;
+            vm.okUtils.ajaxCloud({
+                url:"/sys/org/list",
+                param : vm.org,
+                success : function(result) {
+                     that.tableData = result.msg.pageData;
+                     that.tableSize = result.msg.totalCount;
+                }
+            });
+        },
+        reload : function(){
+            vm.org.parentId = 0;
+            vm.org.description = "";
+            vm.org.pageSize = 10;
+            vm.org.pageNo = 1;
+            this.load();
+            this.tree();
+        },
+        changePage : function(pageNo) {
+            vm.org.pageNo = pageNo;
+            vm.load();
+        },
+        changePageSize : function(pageSize) {
+            vm.org.pageSize = pageSize;
+            vm.load();
+        },
+        edit : function(org) {
+            vm.okUtils.dialogOpen({
+                title: '修改',
+                url: "sys/org/form.html",
+                scroll : true,
+                width: '40%',
+                height: '90%',
+                success : function(dialog) {
+                    dialog.vm.org = JSON.parse(JSON.stringify(org))
+                },
+                yes : function(dialog) {
+                    dialog.vm.acceptClick(vm);
+                }
+            });
+        },
+        add:function(org){
+            vm.okUtils.dialogOpen({
+                title: '新增',
+                url: "sys/org/form.html",
+                scroll : true,
+                width: '40%',
+                height: '90%',
+                success : function(dialog) {
+                    if(org!=undefined){
+                       dialog.vm.org.parentId = org.orgId;
+                       dialog.vm.org.parentName = org.name;
+                    }else{
+                       dialog.vm.org.parentId = vm.org.parentId;
+                       dialog.vm.org.parentName = vm.org.parentName;
+                    }
+                },
+                yes : function(dialog) {
+                    dialog.vm.acceptClick(vm);
+                }
+            });
+        },
+        remove:function(org) {
+             vm.okLayer.confirm("删除需谨慎！你确定要删除吗？", function () {
+                vm.okUtils.ajaxCloud({
+                    url:"/sys/org/delete",
+                    param : {orgId: org.orgId},
+                    success : function(result) {
+                        vm.okLayer.msg.greenTick(result.msg, function () {
+                             vm.load();
+                             vm.tree();
+                        });
+                    }
+                });
+             })
+        }
+    },
+    created: function() {
+        var that = this;
+        layui.use(["okUtils", "okLayer"], function () {
+             that.okUtils = layui.okUtils;
+             that.okLayer = layui.okLayer;
+             that.tree();
+             that.load();
+        });
+    }
+});
+</script>
+</body>
+</html>

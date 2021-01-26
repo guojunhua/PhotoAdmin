@@ -1,0 +1,21 @@
+
+docker run -d --name serving_image tensorflow/serving
+
+# 2000 样本
+docker cp /home/nsfw/data/models/  serving_image:/models/image
+
+docker cp /home/nsfw/data/models/1547856517  serving_image:/models/image
+
+docker exec -it serving_image  /bin/bash
+
+tensorflow_model_server --port=8500 --rest_api_port=8501  --model_name=image --model_base_path=/models/image
+
+
+pip install pillow
+pip install numpy
+
+## 参考
+
+https://www.cnblogs.com/weiyinfu/p/9928363.html
+
+https://www.oschina.net/news/103861/nsfw-opensource

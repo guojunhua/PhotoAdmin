@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" th:href="@{/lib/ztree/css/metroStyle/metroStyle.css}">
+</head>
+<body>
+<div class="ok-body" id="app" v-cloak>
+    <div id="treePanel" style="overflow: auto;">
+        <ul id="areaTree" class="ztree"></ul>
+    </div>
+</div>
+<div th:replace="common/foot :: foot(jquery、tree)"></div>
+<script th:inline="none">
+var setting = {
+    data : {
+        simpleData : {
+            enable : true,
+            idKey : "areaCode",
+            pIdKey : "parentCode",
+            rootPId : "0"
+        },
+        key : {
+            url : "nourl"
+        }
+    },
+    callback : {
+        onClick : function(event, treeId, treeNode) {
+            vm.parentCode = treeNode.areaCode;
+            vm.layer = treeNode.layer;
+            vm.parentName = treeNode.name;
+        }
+    }
+};
+var vm = new Vue({
+    el: '#app',
+    data:{
+		okUtils:null,
+		okLayer:null,
+		parentCode:null,
+		parentName:null,
+		layer:null
+    },
+    methods: {
+        tree : function() {
+            vm.okUtils.ajaxCloud({
+                url:"/sys/area/select",
+                param : {parentCode: vm.parentCode},
+                close:false,
+                success : function(result) {
+                    $.fn.zTree.init($("#areaTree"), setting, result.msg);
+                }
+            });
+        },
+        acceptClick : function(dialog){
+            if(vm.layer<3){
+                dialog.area.parentCode = vm.parentCode;
+                dialog.area.parentName = vm.parentName;
+                dialog.area.layer = vm.layer+1;
+                vm.okUtils.dialogClose();
+            }
+	    }
+    },
+    created: function() {
+        var that = this;
+        layui.use(["okUtils", "okLayer"], function () {
+             that.okUtils = layui.okUtils;
+             that.okLayer = layui.okLayer;
+             that.tree();
+        });
+    }
+});
+</script>
+</body>
+</html>

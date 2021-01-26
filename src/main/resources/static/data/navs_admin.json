@@ -1,0 +1,35 @@
+[
+    {
+        "title": "系统配置",
+        "href": "",
+        "fontFamily": "ok-icon",
+        "icon": "&#xe68a;",
+        "spread": false,
+        "children": [
+            {
+                "title": "用户列表",
+                "href": "sys/user/list.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "角色列表",
+                "href": "sys/role/list.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "菜单列表",
+                "href": "sys/menu/list.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "机构列表",
+                "href": "sys/org/list.html",
+                "icon": "&#xe62e;",
+                "spread": true
+            }
+        ]
+    }
+]

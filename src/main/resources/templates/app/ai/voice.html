@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(link)"/>
+<body>
+<div id="app" class="ok-body" v-cloak>
+    <div style="margin:10px;">
+        <div>
+            <i-input v-model="message" maxlength="200"  type="textarea" :autosize="{minRows: 8,maxRows: 20}" placeholder="请输入..."></i-input>
+        </div>
+        <div style="margin-top:10px; text-align: center;">
+            <div v-show="url!=''">
+                <audio id="audio" :src="url" controls="controls" ></audio>
+            </div>
+            <i-switch v-model="per" size="large">
+                <span slot="open">男声</span>
+                <span slot="close">女声</span>
+            </i-switch>
+            <i-button @click="convert" type="primary">合成播放</i-button>
+
+            <i-button @click="reset" type="primary">重置</i-button>
+        </div>
+    </div>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script>
+layui.use(["okUtils", "okLayer"], function () {
+    var okUtils = layui.okUtils;
+    var okLayer = layui.okLayer;
+    var vm = new Vue({
+    el: '#app',
+    data:{
+        url:'',
+        per: false,
+        title:'百度语音合成',
+        message: '当一个代码的工匠回首往事时，不因虚度年华而悔恨，也不因碌碌无为而羞愧，这样，当他老的时候，可以很自豪告诉世人，我曾经将代码注入生命去打造互联网的浪潮之巅，那是个很疯狂的时代，我在一波波的浪潮上留下了或重如泰山或轻如鸿毛的几笔。'
+    },
+    methods: {
+        convert: function () {
+            if(vm.message===""){vm.open("请输入文字");return}
+            okUtils.ajaxCloud({
+                url : "/app/ai/text2Voice",
+                param : {'time' : (new Date()).toString(),'text':vm.message,'per':vm.per},
+                success : function(result) {
+                     vm.url = result.msg;
+                }
+            });
+        },open: function (msg) {
+            this.$Notice.open({
+                title: '温馨提示',
+                desc: msg
+            });
+        },reset : function(){
+            vm.message="";
+        }
+    }
+});
+});
+</script>
+</body>
+</html>

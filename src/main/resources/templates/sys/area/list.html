@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(tree)"/>
+<style>
+    .div-a{ float:left;width:15%;margin: 8px 3px 0px 3px;height:100%;}
+    .div-b{ float:left;width:82%;margin: 8px 0px 8px 0px;height:100%;}
+</style>
+<body>
+    <div id="app" v-cloak>
+        <div class="div-a">
+            <Card>
+                <p slot="title">
+                    省市
+                </p>
+                <div id="treePanel" style="overflow: auto;">
+                    <ul id="areaTree" class="ztree"></ul>
+                </div>
+            </Card>
+        </div>
+        <div class="div-b">
+            <Card>
+                <!--模糊搜索区域-->
+                <template>
+                    <div style="margin-bottom: 8px;margin-top: 8px;">
+                        <i-input placeholder="输入内容"  v-model="area.description" style="width: 300px"></i-input>
+                        <i-button type="primary"  icon="ios-search" @click="load(0)">搜索</i-button>
+                        <i-button type="primary"  icon="ios-redo" @click="reload()" >重置</i-button>
+                        <i-button type="primary" style="float:right;" icon="md-add" @click="add()">新增</i-button>
+                    </div>
+                </template>
+                <template>
+                    <i-table size="small" :columns="tableTitle"  :data="tableData">
+                    </i-table>
+                </template>
+            </Card>
+        </div>
+    </div>
+<div th:replace="common/foot :: foot(jquery、tree)"></div>
+<script th:inline="none">
+var setting = {
+    edit: {
+        enable: true,
+        showRenameBtn:false,
+        showRemoveBtn:false,
+        drag: {
+            isCopy: false,
+            isMove: true,
+            prev: true,
+            next: true,
+            inner: true
+        }
+    },
+    data : {
+        simpleData : {
+            enable : true,
+            idKey : "areaCode",
+            pIdKey : "parentCode",
+            rootPId : "0"
+        },
+        key : {
+            url : "nourl"
+        }
+    },
+    callback : {
+        onClick : function(event, treeId, treeNode) {
+            vm.area.parentCode = treeNode.areaCode;
+            vm.area.layer = treeNode.layer;
+            vm.area.parentName = treeNode.name;
+            vm.load();
+        }
+    }
+};
+var vm = new Vue({
+    el: '#app',
+    data: {
+        okUtils:null,
+        okLayer:null,
+        layer:null,
+        tableTitle : [ {
+            key : "areaCode",
+            title : "区划代码",
+            minWidth:80
+        },{
+            key : "name",
+            title : "地区名称",
+            minWidth:80
+        },{
+            key : "layer",
+            title : "层级",
+            minWidth:50,
+            render : function(h, params) {
+                var type = "省级";
+                if(params.row.layer==1){
+                    type = "地市";
+                }else if(params.row.layer==2){
+                    type = "区县";
+                }
+                return h('div',type);
+            }
+        },{
+            key : "orderNum",
+            title : "序号",
+            minWidth:80
+        },{
+            title : '操作',
+            key : 'action',
+            minWidth : 100,
+            align : 'center',
+            render : function(h, params) {
+                var functionList = [];
+                var edit = h('Button', {
+                    props : {
+                        type : 'primary',
+                        size : 'small',
+                        icon : 'md-create'
+                    },
+                    style : {
+                        marginRight : '8px'
+                    },
+                    on : {
+                        click : function() {
+                            vm.edit(params.row);
+                        }
+                    }
+                }, '修改');
+                functionList.push(edit);
+                var remove = h('Button', {
+                    props : {
+                        type : 'primary',
+                        size : 'small',
+                        icon : 'md-trash'
+                    },
+                    style : {
+                        marginRight : '8px'
+                    },
+                    on : {
+                        click : function() {
+                            vm.remove(params.row);
+                        }
+                    }
+                }, '删除');
+                functionList.push(remove);
+                return h('div', functionList);
+            }
+        } ],
+        tableData : [],
+        area  : {
+            description:'',
+            parentCode:0,
+            parentName:'一级区域',
+            layer:0
+        },
+        tableSize : 0
+    },
+    methods: {
+        tree : function() {
+            vm.okUtils.ajaxCloud({
+                url:"/sys/area/select",
+                param : {parentCode: ""},
+                success : function(result) {
+                   $.fn.zTree.init($("#areaTree"), setting, result.msg);
+                }
+            });
+        },
+        load : function() {
+            vm.okUtils.ajaxCloud({
+                url:"/sys/area/list",
+                param : vm.area,
+                success : function(result) {
+                    vm.tableData = result.msg;
+                }
+            });
+        },
+        reload : function(){
+            vm.area.parentName = "省级";
+            vm.area.parentCode = 0;
+            vm.area.description = '';
+            vm.area.layer = 0;
+            this.load();
+            this.tree();
+        },
+        changePage : function(pageNo) {
+            vm.page.pageNo = pageNo;
+            vm.load();
+        },
+        changePageSize : function(pageSize) {
+            vm.page.pageSize = pageSize;
+            vm.load();
+        },
+        edit : function(area) {
+            vm.okUtils.dialogOpen({
+                title: '修改',
+                url: "sys/area/form.html",
+                scroll : true,
+                width: '40%',
+                height: '70%',
+                success : function(dialog) {
+                    area.parentName = vm.area.parentName;
+                    dialog.vm.area = JSON.parse(JSON.stringify(area));
+                },
+                yes : function(dialog) {
+                    dialog.vm.acceptClick(vm);
+                }
+            });
+        },
+        add:function(){
+            vm.okUtils.dialogOpen({
+                title: '新增',
+                url: "sys/area/form.html",
+                scroll : true,
+                width: '40%',
+                height: '70%',
+                success : function(dialog) {
+                    dialog.vm.area = JSON.parse(JSON.stringify(vm.area));
+                    dialog.vm.area.layer = vm.area.layer+1;
+                },
+                yes : function(dialog) {
+                    dialog.vm.acceptClick(vm);
+                }
+            });
+        },
+        remove:function(area) {
+             vm.okLayer.confirm("确定要删除吗？", function () {
+                vm.okUtils.ajaxCloud({
+                    url:"/sys/area/delete",
+                    param : {areaCode: area.areaCode},
+                    success : function(result) {
+                        vm.okLayer.msg.greenTick(result.msg, function () {
+                             vm.load();
+                        });
+                    }
+                });
+             });
+        }
+    },
+    created: function() {
+        var that = this;
+        layui.use(["okUtils", "okLayer"], function () {
+             that.okUtils = layui.okUtils;
+             that.okLayer = layui.okLayer;
+             that.tree();
+             that.load();
+        });
+    }
+});
+</script>
+</body>
+</html>

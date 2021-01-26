@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="utf-8">
+    <title>图片审核</title>
+    <link rel="stylesheet" th:href="@{/css/oksub.css}">
+    <link rel="stylesheet" th:href="@{/lib/iview/styles/iview.css}">
+    <link rel="stylesheet" th:href="@{/lib/EditorMD/css/editormd.min.css}" />
+</head>
+<body>
+<div id="app" class="ok-body" v-cloak>
+    <template>
+        <i-input placeholder="类型"  v-model="article.category"  style="width: 10%"></i-input>
+        <i-input placeholder="标题"  v-model="article.title"  style="width: 40%"></i-input>
+        <i-input placeholder="首图地址"  v-model="article.firstPicture"  style="width: 40%"></i-input>
+    </template>
+    <div id="editormd" style="margin-top:10px">
+        <textarea style="display:none;">
+
+        </textarea>
+    </div>
+</div>
+<script src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript" th:src="@{/lib/EditorMD/js/editormd.min.js}"></script>
+<script type="text/javascript" th:src="@{/lib/EditorMD/js/uploadImg.js}"></script>
+<script type="text/javascript" th:src="@{/lib/layui/layui.js}"></script>
+<script type="text/javascript" th:src="@{/lib/vue/vue.min.js}" ></script>
+<script type="text/javascript" th:src="@{/lib/iview/iview.min.js}"></script>
+<script type="text/javascript">
+var vm = new Vue({
+    el: '#app',
+    data:{
+        article:{}
+    },
+    methods: {
+         acceptClick : function(dialog){
+              vm.article.content = editor.getMarkdown();
+              layui.use(["okUtils", "okLayer"], function () {
+                     okUtils = layui.okUtils;
+                     okLayer = layui.okLayer;
+                     okUtils.ajaxCloud({
+                        url:"/app/article/save",
+                        json:true,
+                        param : vm.article,
+                        success : function(result) {
+                             okLayer.msg.greenTick(result.msg, function () {
+                                  dialog.load();
+                             })
+                        }
+                    });
+                });
+         },
+         load:function(){
+            editor.setMarkdown(vm.article.content)
+         }
+    },
+    created: function() {
+
+    }
+})
+var editor;
+$(function() {
+    show()
+});
+function show(){
+    editor = editormd("editormd", {
+         width  : "100%",
+         height : "450px",
+         saveHTMLToTextarea : true,
+         imageUpload : true,
+         imageFormats : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+         imageUploadURL : "/app/article/upload",
+         onload: function () {
+            initPasteDragImg(this);
+         },
+         path : "/lib/EditorMD/lib/"
+    });
+}
+</script>
+</body>
+</html>

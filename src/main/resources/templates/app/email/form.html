@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(links)"/>
+<body>
+<div class="ok-body" id="app" v-cloak>
+    <template>
+        <i-form ref="checkForm" :model="email" :rules="ruleValidate" :label-width="100">
+             <form-item prop="receiveEmail" label="接收人：">
+                 <i-input maxlength="200" v-model="email.receiveEmail" placeholder="请输入接收人邮箱"></i-input>
+             </form-item>
+             <form-item label="抄送人：">
+                 <i-input maxlength="200" v-model="email.ccEmail" placeholder="请输入抄送人邮件"></i-input>
+             </form-item>
+             <form-item prop="subject" label="主题：">
+                 <i-input maxlength="200" v-model="email.subject" placeholder="请输入主题"></i-input>
+             </form-item>
+             <form-item prop="content" label="内容：">
+                 <i-input maxlength="500" v-model="email.content" :autosize="{minRows: 5,maxRows: 5}"  type="textarea" placeholder="请输入内容"></i-input>
+             </form-item>
+        </i-form>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+var vm = new Vue({
+    el: '#app',
+    data:{
+        email:{
+            ccEmail:'',
+            template:''
+        },
+        ruleValidate : {
+             receiveEmail: [
+                { required: true, message: '接收人邮箱不能为空', trigger: 'blur' }
+             ],
+             subject: [
+                { required: true, message: '主题不能为空', trigger: 'blur' }
+             ],
+             content: [
+                { required: true, message: '内容不能为空', trigger: 'blur' }
+             ]
+		}
+    },
+    methods: {
+        acceptClick : function(dialog){
+          vm.$refs.checkForm.validate(function(valid){
+            if (valid) {
+                layui.use(["okUtils", "okLayer"], function () {
+                     okUtils = layui.okUtils;
+                     okLayer = layui.okLayer;
+                     okUtils.ajaxCloud({
+                        url:"/app/email/save",
+                        param : vm.email,
+                        json:true,
+                        success : function(result) {
+                             okLayer.msg.greenTick(result.msg, function () {
+                                  dialog.load();
+                             })
+                        }
+                    });
+                });
+            }
+          });
+	    }
+    },
+    created: function() {
+
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(links)"/>
+<body>
+<div class="ok-body" id="app" v-cloak>
+    <template>
+        <i-form ref="checkForm" :model="leave" :rules="ruleValidate" label-colon :label-width="120" >
+            <row>
+                <i-col span="12">
+                    <Form-item label="开始时间" >
+                        {{leave.beginDate}}
+                    </Form-item>
+                </i-col>
+                <i-col span="12">
+                    <Form-item label="结束时间" >
+                        {{leave.endDate}}
+                    </Form-item>
+                </i-col>
+            </row>
+            <row>
+                <i-col span="12">
+                    <Form-item label="类型" >
+                        {{leave.type}}
+                    </Form-item>
+                </i-col>
+                <i-col span="12">
+                    <Form-item label="原因" >
+                        {{leave.reason}}
+                    </Form-item>
+                </i-col>
+            </row>
+            <form-item prop="approve"  label="是否通过"  style="margin-top:10px"  >
+                <radio-group  v-model="leave.approve" >
+                    <radio v-for="item in approveType" :label="item.approve" :key="item.approve">{{item.approveName}}</radio>
+                </radio-group>
+            </form-item>
+            <form-item label="批注"  >
+                <i-input type="textarea" maxlength="200" show-word-limit  :autosize="{minRows: 6,maxRows: 10}"  v-model="leave.comment" placeholder="请输入批注"></i-input>
+            </form-item>
+        </i-form>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+var vm = new Vue({
+    el: '#app',
+    data:{
+        leave:{
+
+        },
+        leaveCollapse:["leave"],
+        approveType:[{"approve":"true","approveName":"通过"},{"approve":"false","approveName":"拒绝"}],
+        ruleValidate : {
+			approve: [
+				{ required: true, message: '请选择类型', trigger: 'change' }
+			]
+		},
+		okUtils:null,
+		okLayer:null
+    },
+    methods: {
+        acceptClick : function(dialog){
+          vm.$refs.checkForm.validate(function(valid){
+            if (valid) {
+                 layui.use(["okUtils", "okLayer"], function () {
+                     var okUtils = layui.okUtils;
+                     var okLayer = layui.okLayer;
+                     okUtils.ajaxCloud({
+                        url:"/workflow/leave/audit",
+                        param : vm.leave,
+                        json : true,
+                        success : function(result) {
+                            okLayer.msg.greenTick(result.msg, function () {
+                                  dialog.load();
+                            })
+                        }
+                     });
+                });
+            }
+          });
+	    }
+    },
+    created: function() {
+
+    }
+});
+</script>
+</body>
+</html>

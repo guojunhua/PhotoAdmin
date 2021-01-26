@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(tree)"/>
+<style>
+    .div-a{ float:left;width:15%;margin: 8px 3px 0px 3px;height:100%;}
+    .div-b{ float:left;width:82%;margin: 8px 0px 8px 0px;height:100%;}
+</style>
+<body>
+    <div id="app" v-cloak>
+        <div class="div-a">
+            <Card>
+                <p slot="title">
+                    目录
+                </p>
+                <div id="treePanel" style="overflow: auto;">
+                    <ul id="fileTree" class="ztree"></ul>
+                </div>
+            </Card>
+        </div>
+        <div class="div-b">
+            <Card>
+                <i-input v-model="content" :autosize="{minRows: 20,maxRows: 20}"   type="textarea"></i-input>
+                <div>
+                    <br/>
+                    <i-button type="primary" icon="md-undo" @click="getContent()">取消</i-button>
+                    <i-button type="primary" icon="md-build" @click="save()">保存</i-button>
+                </div>
+            </Card>
+        </div>
+    </div>
+    <div th:replace="common/foot :: foot(jquery、tree)"></div>
+<script>
+var ztree;
+var setting = {
+    edit: {
+        enable: true,
+        showRenameBtn:false,
+        showRemoveBtn:false,
+        drag: {
+            isCopy: false,
+            isMove: true,
+            prev: true,
+            next: true,
+            inner: true
+        }
+    },
+    data : {
+        simpleData : {
+            enable : true,
+            idKey : "fileId",
+            pIdKey : "parentId",
+            rootPId : "0"
+        },
+        key : {
+            url : "nourl"
+        }
+    },
+    callback : {
+        onClick : function(event, treeId, treeNode) {
+             vm.filePath = treeNode.parentPath;
+             if(!treeNode.directory){
+                vm.getContent();
+             }
+        },
+        onExpand:function(event, treeId, treeNode){
+
+        }
+    }
+};
+var vm = new Vue({
+    el: '#app',
+    data: {
+        content:"",
+        filePath:'',
+        okUtils:null,
+		okLayer:null
+    },
+    methods: {
+        load:function(){
+            vm.okUtils.ajaxCloud({
+                url:"/sys/file/list",
+                success : function(result) {
+                    ztree = $.fn.zTree.init($("#fileTree"), setting, result.msg);
+                }
+            });
+        },
+        getContent:function(){
+             vm.okUtils.ajaxCloud({
+                url:"/sys/file/getContent",
+                param:{'filePath':vm.filePath},
+                success : function(result) {
+                   vm.content = result.msg;
+                }
+             });
+        },
+        save:function(){
+            vm.okUtils.ajaxCloud({
+                url:"/sys/file/save",
+                param:{'content':vm.content,'filePath':vm.filePath},
+                success : function(result) {
+                   vm.okLayer.msg.greenTick("修改成功");
+                }
+            });
+        }
+    },
+    created: function() {
+        var that = this;
+        layui.use(["okUtils", "okLayer"], function () {
+             that.okUtils = layui.okUtils;
+             that.okLayer = layui.okLayer;
+             that.load();
+        });
+    }
+});
+</script>
+	</body>
+</html>

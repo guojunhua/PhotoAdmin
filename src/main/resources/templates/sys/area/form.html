@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(links)"/>
+<body>
+<div class="ok-body" id="app" v-cloak>
+    <template>
+        <i-form ref="checkForm" :model="area" :rules="ruleValidate" :label-width="100">
+            <form-item prop="areaCode" label="区划代码：">
+                <i-input maxlength="20" v-model="area.areaCode" placeholder="请输入区划代码"></i-input>
+            </form-item>
+            <form-item prop="name" label="区域名称：">
+                <i-input maxlength="20" v-model="area.name" placeholder="请输入区域名称"></i-input>
+            </form-item>
+            <form-item prop="url" label="上级区域：">
+                <span @click="selectArea()">
+                    <i-input readonly v-model="area.parentName" placeholder="请选择上级区域"></i-input>
+                </span>
+            </form-item>
+            <form-item label="层级：">
+                <radio-group  v-model="area.layer">
+                    <radio v-for="item in typeList" :label="item.value" :key="item.value">{{item.label}}</radio>
+                </radio-group>
+            </form-item>
+            <form-item prop="orderNum" label="排序：">
+                <i-input type="number" v-model="area.orderNum" placeholder="序号"></i-input>
+            </form-item>
+            <form-item prop="remark" label="备注：">
+                <i-input maxlength="20" v-model="area.remark" placeholder="请输入备注"></i-input>
+            </form-item>
+        </i-form>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+var vm = new Vue({
+    el: '#app',
+    data:{
+        area:{
+            parentCode:'0',
+            parentName:'一级区域',
+            layer:1
+        },
+        roleName:"",
+        typeList:[{"label":"省级","value":1},{"label":"地市","value":2},{"label":"区县","value":3}],
+        ruleValidate : {
+			areaCode: [
+				{ required: true, message: '请输入区划代码', trigger: 'blur' }
+			],
+			name: [
+				{ required: true, message: '请输入区域名称', trigger: 'blur' }
+			]
+		},
+		okUtils:null,
+		okLayer:null
+    },
+    methods: {
+        acceptClick : function(dialog){
+          vm.$refs.checkForm.validate(function(valid){
+            if (valid) {
+                 vm.okUtils.ajaxCloud({
+                    url:"/sys/area/save",
+                    param : vm.area,
+                    json:true,
+                    success : function(result) {
+                         vm.okLayer.msg.greenTick(result.msg, function () {
+                              dialog.load(vm.area.parentCode);
+                              dialog.tree();
+                         });
+                    }
+                 });
+            }
+          });
+	    },
+	    selectArea:function(){
+	        vm.okUtils.dialogOpen({
+	            id:"selectIcon",
+                title: '选择',
+                url: "sys/area/area.html",
+                scroll : true,
+                width: '300px',
+                height: '500px',
+                success : function(dialog) {
+                    dialog.menu = vm.menu;
+                },
+                yes : function(dialog) {
+                    dialog.vm.acceptClick(vm);
+                }
+            });
+	    }
+    },
+    created: function() {
+        var that = this;
+        layui.use(["okUtils", "okLayer"], function () {
+             that.okUtils = layui.okUtils;
+             that.okLayer = layui.okLayer;
+        });
+    }
+});
+</script>
+</body>
+</html>

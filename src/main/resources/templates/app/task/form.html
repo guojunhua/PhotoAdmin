@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(links)"/>
+<body>
+<div class="ok-body" id="app" v-cloak>
+    <template>
+        <i-form ref="checkForm" :model="task" :rules="ruleValidate" :label-width="100">
+            <form-item prop="name" label="任务名称：">
+                <i-input maxlength="50" v-model="task.name" placeholder="请输入任务名称"></i-input>
+            </form-item>
+            <form-item prop="group" label="任务分组：">
+                <i-input maxlength="50" v-model="task.group" placeholder="请输入任务分组"></i-input>
+            </form-item>
+            <form-item prop="description" label="任务描述：">
+                <i-input maxlength="50" v-model="task.description" placeholder="请输入任务描述"></i-input>
+            </form-item>
+            <form-item prop="taskClassName" label="执行类：">
+                <i-input maxlength="200" v-model="task.taskClassName" placeholder="请输入执行类"></i-input>
+            </form-item>
+            <form-item prop="methodName" label="执行方法：">
+                <i-input maxlength="50" v-model="task.methodName" placeholder="请输入执行方法"></i-input>
+            </form-item>
+            <form-item prop="cronExpression" label="执行时间：">
+                <i-input maxlength="50" v-model="task.cronExpression" placeholder="请输入执行时间"></i-input>
+            </form-item>
+        </i-form>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+var vm = new Vue({
+    el: '#app',
+    data:{
+        task:{},
+        ruleValidate : {
+			name: [
+				{ required: true, message: '任务名称不能为空', trigger: 'blur' }
+			],
+			group: [
+				{ required: true, message: '任务分组不能为空', trigger: 'blur' }
+			],
+			description: [
+				{ required: true, message: '任务描述不能为空', trigger: 'blur' }
+			],
+			taskClassName: [
+				{ required: true, message: '执行类不能为空', trigger: 'blur' }
+			],
+			methodName: [
+				{ required: true, message: '执行方法不能为空', trigger: 'blur' }
+			],
+			taskGroup: [
+				{ required: true, message: '任务分组不能为空', trigger: 'blur' }
+			],
+			cronExpression: [
+				{ required: true, message: '执行时间不能为空', trigger: 'blur' }
+			]
+		}
+    },
+    methods: {
+        acceptClick : function(dialog){
+          vm.$refs.checkForm.validate(function(valid){
+            if (valid) {
+                layui.use(["okUtils", "okLayer"], function () {
+                     okUtils = layui.okUtils;
+                     okLayer = layui.okLayer;
+                     okUtils.ajaxCloud({
+                        url:"/app/task/save",
+                        param : vm.task,
+                        success : function(result) {
+                             okLayer.msg.greenTick(result.msg, function () {
+                                  dialog.load();
+                             })
+                        }
+                    });
+                });
+            }
+          });
+	    }
+    },
+    created: function() {
+
+    }
+});
+</script>
+</body>
+</html>

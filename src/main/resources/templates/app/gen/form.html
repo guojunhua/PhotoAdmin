@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(links)"/>
+<body>
+<div class="ok-body" id="app" v-cloak>
+    <template>
+        <i-table size="small" :columns="tableTitle"  :data="columnList"></i-table>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+var vm = new Vue({
+    el: '#app',
+    data:{
+        gen:{},
+        columnList:[],
+        tableTitle : [ {
+            type: 'selection',
+            width: 60,
+            align: 'center'
+        },{
+            title: '序号',
+            minWidth : 100,
+            render: function(h, params) {
+                return h('span', params.index + 1);
+            }
+        },{
+            key : "columnName",
+            title : "列名",
+            minWidth:100
+        },{
+            key : "columnComment",
+            title : "备注",
+            minWidth:200
+        }],
+        okUtils:null,
+		okLayer:null
+    },
+    methods: {
+        acceptClick : function(dialog){
+           vm.okUtils.ajaxCloud({
+                url:"/app/gen/create",
+                param : vm.gen,
+                json:true,
+                success : function(result) {
+                    vm.okLayer.msg.greenLaugh("代码生成路径："+result.msg)
+                }
+           });
+	    },
+	    load : function(dialog){
+           layui.use(["okUtils", "okLayer"], function () {
+             vm.okUtils = layui.okUtils;
+             vm.okLayer = layui.okLayer;
+             vm.okUtils.ajaxCloud({
+                url:"/app/gen/getColumn",
+                param : {tableName:vm.gen.tableName},
+                close : false,
+                success : function(result) {
+                    vm.columnList = result.msg;
+                }
+             });
+           });
+	    }
+    },
+    created: function() {
+
+    }
+});
+</script>
+</body>
+</html>

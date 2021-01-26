@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="utf-8">
+    <title>图片审核</title>
+    <link rel="stylesheet" th:href="@{/css/oksub.css}">
+    <link rel="stylesheet" th:href="@{/lib/iview/styles/iview.css}">
+    <link rel="stylesheet" th:href="@{/lib/EditorMD/css/editormd.min.css}" />
+</head>
+<body>
+<div id="app" class="ok-body" v-cloak>
+    <template>
+        <i-input placeholder="类型"  v-model="recommend.category"  style="width: 200px"></i-input>
+        <i-input placeholder="标题"  v-model="recommend.title"  style="width: 600px"></i-input>
+        <i-input placeholder="首图地址"  v-model="recommend.firstPicture"  style="width: 600px"></i-input>
+        <i-input placeholder="是否上传妹子图" @on-change="selectStatus" v-model="status" style="width: 200px;margin-top:10px"></i-input>
+    </template>
+    <div id="editormd" style="margin-top:10px">
+        <textarea style="display:none;">
+
+        </textarea>
+    </div>
+</div>
+<script src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript" th:src="@{/lib/EditorMD/js/editormd.min.js}"></script>
+<script type="text/javascript" th:src="@{/lib/EditorMD/js/uploadImg.js}"></script>
+<script type="text/javascript" th:src="@{/lib/layui/layui.js}"></script>
+<script type="text/javascript" th:src="@{/lib/vue/vue.min.js}" ></script>
+<script type="text/javascript" th:src="@{/lib/iview/iview.min.js}"></script>
+<script type="text/javascript">
+var vm = new Vue({
+    el: '#app',
+    data:{
+        recommend:{},
+        status:1
+    },
+    methods: {
+         acceptClick : function(dialog){
+              vm.recommend.content = editor.getMarkdown();
+              layui.use(["okUtils", "okLayer"], function () {
+                     okUtils = layui.okUtils;
+                     okLayer = layui.okLayer;
+                     okUtils.ajaxCloud({
+                        url:"/sys/recommend/save",
+                        json:true,
+                        param : vm.recommend,
+                        success : function(result) {
+                             okLayer.msg.greenTick(result.msg, function () {
+                                  dialog.load();
+                             })
+                        }
+                    });
+                });
+         },
+         load:function(){
+            editor.setMarkdown(vm.recommend.content)
+         },
+         selectStatus:function(){
+            show();
+         }
+    },
+    created: function() {
+
+    }
+})
+var editor;
+$(function() {
+    show()
+});
+function show(){
+    editor = editormd("editormd", {
+         width  : "100%",
+         height : "460px",
+         saveHTMLToTextarea : true,
+         imageUpload : true,
+         imageFormats : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+         imageUploadURL : "/sys/girl/upload?status="+vm.status,
+         /*上传图片成功后可以做一些自己的处理*/
+         onload: function () {
+            initPasteDragImg(this);
+         },
+         path   : "/lib/EditorMD/lib/"
+    });
+}
+</script>
+</body>
+</html>

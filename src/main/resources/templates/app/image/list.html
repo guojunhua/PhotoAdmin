@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>这可能是世界上最好的图床</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="这可能是世界上最好的图床，没有之一">
+    <meta name="description" content="这可能是世界上最好的图床，没有之一">
+    <link rel="stylesheet" th:href="@{/lib/layui/css/layui.css}"  media="all">
+    <link rel="stylesheet" th:href="@{/lib/viewer/css/viewer.min.css}">
+    <style>
+        .flow-default{margin-top: 20px}
+        .flow-default li{
+                display: inline-block;
+                width: 31%;
+                height: 200px;
+                padding: 10px;
+                box-sizing:border-box;
+                border: 1px solid #ccc;
+                background: #f7f7f7;
+                box-shadow: 0 0 8px #ccc;
+                margin: 0 15px 10px 0px;
+                position: relative;
+                overflow: hidden;
+        }
+        .flow-default li img{width: 100%}
+        @media screen and (max-width: 430px){
+            .flow-default li{
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div style="margin-left: 10px">
+    <ul class="flow-default" id="images"></ul>
+</div>
+<script th:src="@{/lib/layui/layui.js}"></script>
+<script th:src="@{/lib/viewer/viewer.min.js}"></script>
+<script th:inline="none">
+var okUtils,viewer;
+layui.use(["flow", "okUtils", "okLayer"], function(){
+  var flow = layui.flow;
+  okUtils = layui.okUtils;
+  flow.load({
+    elem: '#images', //流加载容器
+    //scrollElem: '#images', //滚动条所在元素，一般不用填，此处只是演示需要。
+    isAuto: true,
+    isLazyimg: true,
+    done: function(page, next){ //加载下一页
+          page--;
+          var data = {pageNo:page+1,pageSize:12};
+          var images;
+          okUtils.ajax("/app/image/list", "post", data, false).done(function (response) {
+              console.log(response)
+              images = response.msg.pageData;
+          }).fail(function (error) {
+              console.log(error)
+          });
+          setTimeout(function(){
+            var lis = [];
+            images.forEach((item,index)=>{
+                var url = window.location.href;
+                var image = "/"+item.imagePath;
+                lis.push('<li><a onclick="show(\''+item.uuid+'\')"  href="javaScript:void(0)"><img lay-src="'+image+'"/></a></li>')
+            });
+            next(lis.join(''));
+            if(page==0){
+                viewer = new Viewer(document.getElementById('images'));
+            }else{
+                viewer.update();
+            }
+          }, 500);
+    }
+  });
+});
+</script>
+</body>
+</html>

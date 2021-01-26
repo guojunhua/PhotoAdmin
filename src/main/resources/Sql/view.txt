@@ -1,0 +1,10 @@
+-- 创建角色
+CREATE VIEW act_id_group  AS SELECT role_sign AS ID_, user_id_create AS REV_, role_name AS NAME_, role_sign AS TYPE_ FROM  sys_role AS sr
+
+-- 创建用户
+
+CREATE VIEW act_id_user   AS SELECT user_id AS ID_, STATUS AS REV_, nickname AS FIRST_, nickname AS LAST_, email AS EMAIL_, PASSWORD AS PWD_, avatar_status AS PICTURE_ID_ FROM sys_user AS su
+
+-- 创建关系
+
+CREATE VIEW act_id_membership  AS  SELECT   sur.user_id AS USER_ID_, sr.role_sign AS GROUP_ID_ FROM sys_role AS sr INNER JOIN sys_user_role AS sur ON sr.role_id = sur.role_id

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head(link)"/>
+<body>
+<div id="app" class="ok-body" v-cloak>
+    <!--模糊搜索区域-->
+    <template>
+        <div style="margin-bottom: 8px;margin-top: 8px;">
+            <i-input placeholder="输入内容"  v-model="gen.description"  style="width: 300px"></i-input>
+            <i-button type="primary"  icon="ios-search" @click="load()">搜索</i-button>
+            <i-button type="primary"  icon="ios-redo" @click="reload()" >重置</i-button>
+        </div>
+    </template>
+    <template>
+        <i-table size="small" :columns="tableTitle"  :data="tableData">
+        </i-table>
+        <br>
+        <Page  style="float: right;" :current="gen.pageNo" :total="tableSize" :page-size="gen.pageSize"  @on-change="changePage" @on-page-size-change="changePageSize" show-elevator show-sizer show-total></Page>
+    </template>
+</div>
+<div th:replace="common/foot :: foot(script)"></div>
+<script th:inline="none">
+layui.use(["okUtils", "okLayer"], function () {
+    var okUtils = layui.okUtils;
+    var okLayer = layui.okLayer;
+    var vm = new Vue({
+        el: '#app',
+        data: function(){
+            var that = this;
+            return {
+                tableTitle : [{
+                    title: '序号',
+                    minWidth : 100,
+                    render: function(h, params) {
+                        return h('span', params.index + (that.gen.pageNo- 1) * that.gen.pageSize + 1);
+                    }
+                },{
+                    key : "tableName",
+                    title : "表名",
+                    minWidth:100
+                },{
+                    key : "tableComment",
+                    title : "备注",
+                    minWidth:200
+                },{
+                    title : '操作',
+                    key : 'action',
+                    minWidth : 100,
+                    align : 'center',
+                    render : function(h, params) {
+                        var functionList = [];
+                        var create = h('Button', {
+                            props : {
+                                type : 'primary',
+                                size : 'small',
+                                icon : 'ios-build'
+                            },
+                            style : {
+                                marginRight : '8px'
+                            },
+                            on : {
+                                click : function() {
+                                    vm.create(params.row);
+                                }
+                            }
+                        }, '生成');
+                        functionList.push(create);
+                        return h('div', functionList);
+                    }
+                } ],
+                tableData : [],
+                gen : {
+                    pageSize : 10,
+                    pageNo : 1,
+                    description:''
+                },
+                tableSize : 50,
+            }
+        },
+        methods: {
+            load : function() {
+                var that = this;
+                okUtils.ajaxCloud({
+                    url:"/app/gen/list",
+                    param : that.gen,
+                    success : function(result) {
+                         that.tableData = result.msg.pageData;
+                         that.tableSize = result.msg.totalCount;
+                    }
+                });
+            },
+            reload : function(){
+                vm.gen.pageSize = 10;
+                vm.gen.pageNo = 1;
+                vm.gen.description = '';
+                this.load();
+            },
+            changePage : function(pageNo) {
+                vm.gen.pageNo = pageNo;
+                vm.load();
+            },
+            changePageSize : function(pageSize) {
+                vm.gen.pageSize = pageSize;
+                vm.load();
+            },
+            create : function(table) {
+                okUtils.dialogOpen({
+                    title: '生成',
+                    url: "app/gen/form.html",
+                    scroll : true,
+                    width: '60%',
+                    height: '80%',
+                    success : function(dialog) {
+                        dialog.vm.gen = JSON.parse(JSON.stringify(table));
+                        dialog.vm.load();
+                    },
+                    yes : function(dialog) {
+                        dialog.vm.acceptClick(vm);
+                    }
+                });
+            }
+        },
+        created: function() {
+            this.load()
+        }
+    })
+  });
+</script>
+</body>
+</html>
